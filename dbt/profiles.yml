@@ -1,0 +1,1 @@
+# profiles.yml: dbt connection profile for Postgres (reads values from environment variables).
