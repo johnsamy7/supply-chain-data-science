@@ -1,8 +1,10 @@
 data/
 .env
+.venv/
 mlruns/
+mlartifacts/
 target/
 logs/
 __pycache__/
-.venv/
+.ipynb_checkpoints/
 *.pbix
