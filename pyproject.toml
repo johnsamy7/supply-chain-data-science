@@ -1,1 +1,21 @@
 # pyproject.toml: Python project metadata, dependencies and tool settings.
+
+[project]
+name = "supply-chain-data-science"
+version = "0.1.0"
+description = "Supply chain data science project on DataCo data: ML, dbt, MLflow, Docker"
+requires-python = ">=3.11"
+dependencies = [
+    "ipykernel>=7.4.0",
+    "matplotlib>=3.11.2",
+    "mlflow==3.17.0",
+    "numpy>=2.4.6",
+    "pandas>=3.0.6",
+    "seaborn>=0.13.2",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.2",
+    "ruff>=0.17.0",
+]
