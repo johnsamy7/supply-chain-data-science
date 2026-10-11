@@ -82,7 +82,7 @@ For **every step** (not just every phase):
 | :---- | :---- |
 | OS | Windows, 16 GB RAM |
 | Docker | Docker Desktop with WSL2. Limit WSL2 to about 8 GB in `.wslconfig` so Windows, Power BI, and the browser stay usable |
-| Python | 3.11+, **local virtual environment on Windows** (venv or uv, chosen in Phase 0 with John). Notebooks run locally in VS Code |
+| Python | 3.11, **local virtual environment on Windows managed by uv** (`pyproject.toml` + `uv.lock` + `.python-version`). Notebooks run locally in VS Code |
 | Databases and services | Run in Docker; local Python connects to them via `localhost` |
 | Later | Once Docker is proven stable, John may move Python/notebooks into Docker (open decision, Section 13\) |
 
@@ -99,7 +99,7 @@ For **every step** (not just every phase):
 | Purpose | Tool | Arrives in phase |
 | :---- | :---- | :---- |
 | Containers | Docker \+ Docker Compose | 0 |
-| Warehouse | PostgreSQL 16 | 0 |
+| Warehouse | PostgreSQL 17 | 0 |
 | Data loading | Python (pandas \+ psycopg) | 1 |
 | Transformations \+ data quality | dbt-core \+ dbt-postgres (dbt tests only, no Great Expectations) | 2 |
 | Analysis | Jupyter notebooks, pandas, matplotlib/seaborn/plotly | 3 |
@@ -145,7 +145,7 @@ For **every step** (not just every phase):
 
       ▼
 
- ┌──────────────────────── PostgreSQL (database: warehouse) ────────────────────────┐
+ ┌──────────────────────── PostgreSQL (database: dataco) ───────────────────────────┐
 
  │  bronze.\*   raw tables, exactly as loaded \+ audit columns                         │
 
@@ -183,7 +183,7 @@ For **every step** (not just every phase):
 
  Airflow (Phase 9\) automates the chain: load ─► dbt build \+ tests ─► train ─► register ─► score
 
-Databases inside the one Postgres container: `warehouse` (project data), `mlflow` (MLflow backend), `airflow` (added in Phase 9).
+Databases inside the one Postgres container: `dataco` (project data), `mlflow` (MLflow backend), `airflow` (added in Phase 9).
 
 ---
 
@@ -443,8 +443,8 @@ Every phase is on its own branch, built **step by step with the teaching protoco
 ### Phase 0: Setup
 
 - Repo skeleton (folders above), `.gitignore`, `.gitattributes`, `.env.example`, `Makefile`, `pyproject.toml`, pre-commit, tiny `CLAUDE.md`, README stub, CI with lint.
-- `docker-compose.yml` with **Postgres only** (+ healthcheck, memory limit, named volume). Init SQL creates the `warehouse` and `mlflow` databases, the schemas, and the roles.
-- Local Python virtual environment (choose venv or uv with John).
+- `docker-compose.yml` with **Postgres only** (+ healthcheck, memory limit, named volume). Init SQL creates the `dataco` and `mlflow` databases, the schemas, and the roles.
+- Local Python virtual environment: **uv** chosen (Python 3.11).
 - ADRs: Postgres as warehouse, dbt-only data quality, no Spark, local Python first.
 - **Done when:** `make up` gives a healthy Postgres; John can connect and see all schemas; `make down` keeps the data; CI is green; the 3 CSVs sit in `data/raw/` and `git status` doesn't show them.
 
@@ -539,7 +539,7 @@ Screenshots go in `powerbi/` and the README. Because `.pbix` is gitignored by de
 | 7 | Monitoring scope (reports only vs auto-retrain) | Start of Phase 11 |
 | 8 | Move Python/notebooks into Docker or keep local | After Docker is stable (any time) |
 | 9 | Commit the `.pbix` or screenshots only | Phase 12 |
-| 10 | venv vs uv | Phase 0 |
+| 10 | ~~venv vs uv~~ **Decided: uv** | Phase 0 |
 
 ---
 
@@ -558,12 +558,3 @@ Screenshots go in `powerbi/` and the README. Because `.pbix` is gitignored by de
 - **SQL/dbt:** snake\_case; prefixes `stg_`, `int_`, `dim_`, `fct_`, `feat_`; one CTE per logical step; every model has a description and tests in YAML.
 - **Notebooks:** numbered, a markdown cell explaining the goal at the top and a conclusions cell at the bottom; clear outputs before committing large plots if file size grows.
 - **Naming:** clear and boring beats short and clever.
-
-
-# CLAUDE.md
-
-Read `ARCHITECTURE.md` fully before every task. It is the source of truth for this project.
-
-- This is a data science project with supporting engineering. Correctness and clarity beat more features.
-- Follow the teaching protocol (ARCHITECTURE.md Section 2.2): explain, build one step, explain, then stop and wait.
-- Ask before adding tools or making any open decision (Section 13). Never guess.

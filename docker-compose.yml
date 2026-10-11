@@ -1,4 +1,4 @@
-# docker-compose.yml: defines the local services (Postgres, Airflow, MLflow, API).
+# docker-compose.yml: local services. Step 4: PostgreSQL + MLflow (FastAPI and Airflow are added in later steps).
 # One command starts the whole foundation: docker compose up -d
 name: dataco
 
