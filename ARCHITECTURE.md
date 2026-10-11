@@ -47,31 +47,31 @@ John must be able to **explain every file in an interview**. If something is too
 
 For **every step** (not just every phase):
 
-1. **Before building:** explain in simple words what you're about to build, why the project needs it, and how it connects to the rest. Define every new term the first time it appears (for example: "a *container* is...").  
-2. **Build** only that one step.  
-3. **After building:**  
-   - List every file created or changed, with one line on what each does.  
-   - Walk through the important parts of the code in plain English.  
-   - Give John the exact commands to **run and test it himself**, and what he should see.  
-   - Explain how this step affects the data, the models, or the final output.  
-   - Mention one thing that commonly goes wrong here and how to spot it.  
+1. **Before building:** explain in simple words what you're about to build, why the project needs it, and how it connects to the rest. Define every new term the first time it appears (for example: "a *container* is...").
+2. **Build** only that one step.
+3. **After building:**
+   - List every file created or changed, with one line on what each does.
+   - Walk through the important parts of the code in plain English.
+   - Give John the exact commands to **run and test it himself**, and what he should see.
+   - Explain how this step affects the data, the models, or the final output.
+   - Mention one thing that commonly goes wrong here and how to spot it.
 4. **Stop and wait** for John to say continue. Never start the next step on your own.
 
 ### 2.3 Hard rules
 
-- **Ask before** adding any tool, library, or service not listed in Section 4\.  
-- **Ask before** any decision listed as open in Section 13\.  
-- **Never** commit data files, `.env`, secrets, or credentials. **The repo is public from day one.**  
-- **Never** edit or overwrite anything in `data/raw/`.  
-- **Never** use a column that leaks the target as a feature (Section 8.3). If unsure, ask.  
-- Prefer the simplest solution that works. No clever abstractions John can't explain.  
+- **Ask before** adding any tool, library, or service not listed in Section 4\.
+- **Ask before** any decision listed as open in Section 13\.
+- **Never** commit data files, `.env`, secrets, or credentials. **The repo is public from day one.**
+- **Never** edit or overwrite anything in `data/raw/`.
+- **Never** use a column that leaks the target as a feature (Section 8.3). If unsure, ask.
+- Prefer the simplest solution that works. No clever abstractions John can't explain.
 - Use Python `logging`, not `print`, in `src/` code (fine in notebooks).
 
 ### 2.4 Git workflow
 
-- One branch per phase: `phase-00-setup`, `phase-01-load-raw`, and so on.  
-- Small commits after each step, with Conventional Commit messages (`feat:`, `fix:`, `docs:`, `chore:`, `test:`).  
-- At the end of a phase: open a pull request into `main` with a summary of what was built. CI must pass before merging.  
+- One branch per phase: `phase-00-setup`, `phase-01-load-raw`, and so on.
+- Small commits after each step, with Conventional Commit messages (`feat:`, `fix:`, `docs:`, `chore:`, `test:`).
+- At the end of a phase: open a pull request into `main` with a summary of what was built. CI must pass before merging.
 - John merges. Claude Code does not merge into `main` itself.
 
 ---
@@ -82,14 +82,14 @@ For **every step** (not just every phase):
 | :---- | :---- |
 | OS | Windows, 16 GB RAM |
 | Docker | Docker Desktop with WSL2. Limit WSL2 to about 8 GB in `.wslconfig` so Windows, Power BI, and the browser stay usable |
-| Python | 3.11+, **local virtual environment on Windows** (venv or uv, chosen in Phase 0 with John). Notebooks run locally in VS Code |
+| Python | 3.11, **local virtual environment on Windows managed by uv** (`pyproject.toml` + `uv.lock` + `.python-version`). Notebooks run locally in VS Code |
 | Databases and services | Run in Docker; local Python connects to them via `localhost` |
 | Later | Once Docker is proven stable, John may move Python/notebooks into Docker (open decision, Section 13\) |
 
 **Windows rules:**
 
-- `.gitattributes` must include `* text=auto eol=lf` (CRLF line endings break scripts inside containers).  
-- Use paths that work on Windows and Linux (`pathlib`, never hardcoded `C:\...`).  
+- `.gitattributes` must include `* text=auto eol=lf` (CRLF line endings break scripts inside containers).
+- Use paths that work on Windows and Linux (`pathlib`, never hardcoded `C:\...`).
 - Every Docker service gets a memory limit and a healthcheck.
 
 ---
@@ -99,7 +99,7 @@ For **every step** (not just every phase):
 | Purpose | Tool | Arrives in phase |
 | :---- | :---- | :---- |
 | Containers | Docker \+ Docker Compose | 0 |
-| Warehouse | PostgreSQL 16 | 0 |
+| Warehouse | PostgreSQL 17 | 0 |
 | Data loading | Python (pandas \+ psycopg) | 1 |
 | Transformations \+ data quality | dbt-core \+ dbt-postgres (dbt tests only, no Great Expectations) | 2 |
 | Analysis | Jupyter notebooks, pandas, matplotlib/seaborn/plotly | 3 |
@@ -128,9 +128,9 @@ For **every step** (not just every phase):
 
 **Known quirks (verify, don't assume):**
 
-- The orders CSV is **not UTF-8**; read with `encoding="latin-1"`.  
-- Column names have spaces and parentheses (for example `Days for shipping (real)`).  
-- Some customer fields are masked or empty (for example `Customer Email`, `Customer Password`, `Product Description`). These are candidates to drop in silver; confirm with John.  
+- The orders CSV is **not UTF-8**; read with `encoding="latin-1"`.
+- Column names have spaces and parentheses (for example `Days for shipping (real)`).
+- Some customer fields are masked or empty (for example `Customer Email`, `Customer Password`, `Product Description`). These are candidates to drop in silver; confirm with John.
 - Confirm the date range of the orders in Phase 3 EDA; it affects the time-based split and forecasting.
 
 ---
@@ -145,7 +145,7 @@ For **every step** (not just every phase):
 
       ▼
 
- ┌──────────────────────── PostgreSQL (database: warehouse) ────────────────────────┐
+ ┌──────────────────────── PostgreSQL (database: dataco) ───────────────────────────┐
 
  │  bronze.\*   raw tables, exactly as loaded \+ audit columns                         │
 
@@ -183,7 +183,7 @@ For **every step** (not just every phase):
 
  Airflow (Phase 9\) automates the chain: load ─► dbt build \+ tests ─► train ─► register ─► score
 
-Databases inside the one Postgres container: `warehouse` (project data), `mlflow` (MLflow backend), `airflow` (added in Phase 9).
+Databases inside the one Postgres container: `dataco` (project data), `mlflow` (MLflow backend), `airflow` (added in Phase 9).
 
 ---
 
@@ -348,13 +348,13 @@ supply-chain-platform/
 
 ### 8.2 Modeling standard (applies to every supervised model)
 
-1. **Baseline first:** a dummy or simple-rule model, so every result has something to beat.  
-2. **Simple model:** Logistic Regression (classification) or a naive/seasonal baseline (forecasting).  
-3. **Strong models:** Random Forest and XGBoost or LightGBM.  
-4. **Tuning** with cross-validation that respects time (`TimeSeriesSplit` or an expanding window), never random folds on time-ordered data.  
-5. **Threshold selection** based on business cost (Section 8.4).  
-6. **Explanation with SHAP:** global importance plus a few individual examples explained in plain English.  
-7. **Error analysis:** where the model fails (by market, shipping mode, category).  
+1. **Baseline first:** a dummy or simple-rule model, so every result has something to beat.
+2. **Simple model:** Logistic Regression (classification) or a naive/seasonal baseline (forecasting).
+3. **Strong models:** Random Forest and XGBoost or LightGBM.
+4. **Tuning** with cross-validation that respects time (`TimeSeriesSplit` or an expanding window), never random folds on time-ordered data.
+5. **Threshold selection** based on business cost (Section 8.4).
+6. **Explanation with SHAP:** global importance plus a few individual examples explained in plain English.
+7. **Error analysis:** where the model fails (by market, shipping mode, category).
 8. Everything logged to MLflow: parameters, metrics, feature list, data split dates, git commit, plots.
 
 ### 8.3 Leakage rules (critical)
@@ -369,10 +369,10 @@ Every model card lists its **allowed feature list** and why each banned column w
 
 ### 8.4 Evaluation
 
-- **Split:** time-based. Train on older orders, validate on the next period, test on the most recent period. The exact cut dates are set after EDA and recorded in an ADR.  
-- **Late delivery:** PR-AUC as the main metric, plus precision and recall at a threshold chosen by business cost. A missed late order (false negative) and a false alarm (false positive) get explicit assumed costs, written in the model card. ROC-AUC and F1 are reported but not used to choose the model.  
-- **Fraud:** same approach as late delivery (PR-AUC \+ cost-based threshold); handle imbalance with class weights first and resampling only if needed.  
-- **Forecasting:** MAE and MAPE (or WAPE) against the naive baseline, on a time holdout.  
+- **Split:** time-based. Train on older orders, validate on the next period, test on the most recent period. The exact cut dates are set after EDA and recorded in an ADR.
+- **Late delivery:** PR-AUC as the main metric, plus precision and recall at a threshold chosen by business cost. A missed late order (false negative) and a false alarm (false positive) get explicit assumed costs, written in the model card. ROC-AUC and F1 are reported but not used to choose the model.
+- **Fraud:** same approach as late delivery (PR-AUC \+ cost-based threshold); handle imbalance with class weights first and resampling only if needed.
+- **Forecasting:** MAE and MAPE (or WAPE) against the naive baseline, on a time holdout.
 - **Segmentation:** silhouette score \+ business interpretability of each segment (a named profile per segment).
 
 ### 8.5 Clickstream logs
@@ -397,8 +397,8 @@ Used as a **feature source**: aggregate views by product/category per day (and b
 
 **Gold star schema (first version, adjust after EDA):**
 
-- Facts: `fct_order_items` (one row per order line), `fct_orders` (one row per order), `fct_web_activity_daily`.  
-- Dimensions: `dim_customer`, `dim_product`, `dim_category`, `dim_department`, `dim_geography`, `dim_shipping_mode`, `dim_date`.  
+- Facts: `fct_order_items` (one row per order line), `fct_orders` (one row per order), `fct_web_activity_daily`.
+- Dimensions: `dim_customer`, `dim_product`, `dim_category`, `dim_department`, `dim_geography`, `dim_shipping_mode`, `dim_date`.
 - Features: `feat_late_delivery`, `feat_fraud`, `feat_demand`, `feat_customer_rfm`.
 
 **Database roles:** separate roles for loader, dbt, MLflow, and a **read-only role for Power BI**.
@@ -409,27 +409,27 @@ Used as a **feature source**: aggregate views by product/category per day (and b
 
 **dbt tests (all models):**
 
-- Keys: `unique` \+ `not_null`.  
-- `relationships` between every fact and its dimensions.  
-- `accepted_values` on status/category fields.  
-- Range checks with `dbt_utils` (quantities ≥ 0, discount rate between 0 and 1, etc.).  
-- Singular tests for business rules (e.g. order date ≤ shipping date, scheduled days ≥ 0).  
-- Source freshness on bronze `_loaded_at`.  
+- Keys: `unique` \+ `not_null`.
+- `relationships` between every fact and its dimensions.
+- `accepted_values` on status/category fields.
+- Range checks with `dbt_utils` (quantities ≥ 0, discount rate between 0 and 1, etc.).
+- Singular tests for business rules (e.g. order date ≤ shipping date, scheduled days ≥ 0).
+- Source freshness on bronze `_loaded_at`.
 - Severity: `error` for keys, relationships, and contracts; `warn` for soft business rules.
 
 **pytest (Python):**
 
-- Ingestion: file contract check (right columns, encoding handled), row counts match the raw files, loading twice doesn't duplicate.  
-- Features and ML common code: time split never leaks future rows, feature builders return the expected columns.  
+- Ingestion: file contract check (right columns, encoding handled), row counts match the raw files, loading twice doesn't duplicate.
+- Features and ML common code: time split never leaks future rows, feature builders return the expected columns.
 - Small fixture files only, never the full dataset.
 
 ---
 
 ## 11\. CI (GitHub Actions), on every push and pull request
 
-1. `ruff check` and `ruff format --check`  
-2. `pytest`  
-3. `dbt deps` \+ `dbt compile` (with a dummy profile, no real database)  
+1. `ruff check` and `ruff format --check`
+2. `pytest`
+3. `dbt deps` \+ `dbt compile` (with a dummy profile, no real database)
 4. `docker compose config` (validates the compose file)
 
 CI starts in Phase 0 with lint only and grows as each phase adds code. It must stay green.
@@ -442,36 +442,36 @@ Every phase is on its own branch, built **step by step with the teaching protoco
 
 ### Phase 0: Setup
 
-- Repo skeleton (folders above), `.gitignore`, `.gitattributes`, `.env.example`, `Makefile`, `pyproject.toml`, pre-commit, tiny `CLAUDE.md`, README stub, CI with lint.  
-- `docker-compose.yml` with **Postgres only** (+ healthcheck, memory limit, named volume). Init SQL creates the `warehouse` and `mlflow` databases, the schemas, and the roles.  
-- Local Python virtual environment (choose venv or uv with John).  
-- ADRs: Postgres as warehouse, dbt-only data quality, no Spark, local Python first.  
+- Repo skeleton (folders above), `.gitignore`, `.gitattributes`, `.env.example`, `Makefile`, `pyproject.toml`, pre-commit, tiny `CLAUDE.md`, README stub, CI with lint.
+- `docker-compose.yml` with **Postgres only** (+ healthcheck, memory limit, named volume). Init SQL creates the `dataco` and `mlflow` databases, the schemas, and the roles.
+- Local Python virtual environment: **uv** chosen (Python 3.11).
+- ADRs: Postgres as warehouse, dbt-only data quality, no Spark, local Python first.
 - **Done when:** `make up` gives a healthy Postgres; John can connect and see all schemas; `make down` keeps the data; CI is green; the 3 CSVs sit in `data/raw/` and `git status` doesn't show them.
 
 ### Phase 1: Load raw data into bronze
 
-- **First, explain both loading options to John (one-time load vs. simulated daily batches) with pros, cons, and effort, and wait for his decision.** Record it in an ADR.  
-- Build `schemas.py` (file contracts), `loader.py` (and `splitter.py` if batches), `meta.load_log`, pytest tests.  
+- **First, explain both loading options to John (one-time load vs. simulated daily batches) with pros, cons, and effort, and wait for his decision.** Record it in an ADR.
+- Build `schemas.py` (file contracts), `loader.py` (and `splitter.py` if batches), `meta.load_log`, pytest tests.
 - **Done when:** bronze row counts equal the raw file row counts; running the load twice doesn't duplicate; a broken file is rejected and logged; tests pass.
 
 ### Phase 2: dbt silver and gold
 
-- dbt project, sources, `stg_*`, `int_*`, gold `dim_*`/`fct_*` with contracts, all tests from Section 10\. Feature tables wait until Phase 4\.  
+- dbt project, sources, `stg_*`, `int_*`, gold `dim_*`/`fct_*` with contracts, all tests from Section 10\. Feature tables wait until Phase 4\.
 - **Done when:** `dbt build` passes with zero errors; row counts reconcile bronze → silver → gold (any intentional drops documented); `dbt docs generate` works; Power BI can connect to `gold` with the read-only role.
 
 ### Phase 3: EDA and business story (John leads)
 
-- Claude Code creates the `notebooks/01_eda/` outline (sections and guiding questions), then supports and reviews. John does the analysis.  
-- Outputs: `docs/business_story.md`, `docs/data_dictionary.md`, first figures in `reports/figures/`, confirmed use-case list, confirmed date range and split dates (ADR).  
+- Claude Code creates the `notebooks/01_eda/` outline (sections and guiding questions), then supports and reviews. John does the analysis.
+- Outputs: `docs/business_story.md`, `docs/data_dictionary.md`, first figures in `reports/figures/`, confirmed use-case list, confirmed date range and split dates (ADR).
 - **Done when:** John has written the business story and confirmed the targets, banned columns, and split dates for each use case.
 
 ### Phase 4: Late delivery model (main use case)
 
-- dbt `feat_late_delivery` (+ clickstream features), with tests.  
-- Start **MLflow tracking** (Docker service, backend in Postgres `mlflow` db) so every experiment is logged from the start.  
-- John's notebook `02_late_delivery/`: baseline → simple → strong models → tuning → threshold by cost → SHAP → error analysis.  
-- Claude Code converts the final approach into `src/ml/common/` \+ `src/ml/late_delivery/train.py`, with pytest tests.  
-- Model card \+ findings section.  
+- dbt `feat_late_delivery` (+ clickstream features), with tests.
+- Start **MLflow tracking** (Docker service, backend in Postgres `mlflow` db) so every experiment is logged from the start.
+- John's notebook `02_late_delivery/`: baseline → simple → strong models → tuning → threshold by cost → SHAP → error analysis.
+- Claude Code converts the final approach into `src/ml/common/` \+ `src/ml/late_delivery/train.py`, with pytest tests.
+- Model card \+ findings section.
 - **Done when:** `python -m src.ml.late_delivery.train` reproduces John's best result and logs it to MLflow; leakage review passed; model card written.
 
 ### Phase 5: Fraud detection
@@ -488,19 +488,19 @@ Same pattern; RFM features in dbt, clustering, named segment profiles, segments 
 
 ### Phase 8: Model registry and scoring
 
-- MLflow Model Registry: register each final model, use a `champion` alias.  
-- Batch scoring scripts that write predictions to `ml.predictions_*` with model version.  
+- MLflow Model Registry: register each final model, use a `champion` alias.
+- Batch scoring scripts that write predictions to `ml.predictions_*` with model version.
 - **Done when:** each model can be retrained, registered, and used to score from one command each.
 
 ### Phase 9: Airflow orchestration
 
-- Add Airflow (LocalExecutor) to Docker Compose with memory limits; `airflow` database in Postgres.  
-- DAGs: load → dbt build \+ test → train → register → score. dbt runs via BashOperator inside the Airflow image.  
+- Add Airflow (LocalExecutor) to Docker Compose with memory limits; `airflow` database in Postgres.
+- DAGs: load → dbt build \+ test → train → register → score. dbt runs via BashOperator inside the Airflow image.
 - **Done when:** one DAG run goes end to end; a failing dbt test turns the DAG red and stops downstream tasks.
 
 ### Phase 10: FastAPI serving
 
-- FastAPI app loading the `champion` model(s) from the registry; `/health` and `/predict` endpoints with Pydantic validation; pytest tests; Docker service.  
+- FastAPI app loading the `champion` model(s) from the registry; `/health` and `/predict` endpoints with Pydantic validation; pytest tests; Docker service.
 - **Done when:** a sample request returns a prediction matching the batch scoring for the same input.
 
 ### Phase 11: Monitoring (scope decided by John before starting)
@@ -511,17 +511,17 @@ Same pattern; RFM features in dbt, clustering, named segment profiles, segments 
 
 Four pages, connected to `gold` and `ml` with the read-only role:
 
-1. **Executive overview:** sales, profit, orders, key KPIs by market and over time.  
-2. **Delivery performance:** late rates by shipping mode, region, product; delay trends.  
-3. **Model outputs:** late-delivery risk, fraud flags, forecasts vs actuals, segments.  
+1. **Executive overview:** sales, profit, orders, key KPIs by market and over time.
+2. **Delivery performance:** late rates by shipping mode, region, product; delay trends.
+3. **Model outputs:** late-delivery risk, fraud flags, forecasts vs actuals, segments.
 4. **Customer and product:** segment profiles, top products/categories, web traffic vs sales.
 
 Screenshots go in `powerbi/` and the README. Because `.pbix` is gitignored by default, decide with John whether to commit the `.pbix` (it contains no secrets if credentials aren't saved) or share screenshots only.
 
 ### Phase 13: Polish
 
-- README: the business story in brief, architecture diagram, results per model (with the business meaning), dashboard screenshots, how to run in a few commands.  
-- Final check of all model cards, ADRs, and findings.  
+- README: the business story in brief, architecture diagram, results per model (with the business meaning), dashboard screenshots, how to run in a few commands.
+- Final check of all model cards, ADRs, and findings.
 - **Done when:** a stranger can clone the repo and run it from the README alone.
 
 ---
@@ -539,31 +539,22 @@ Screenshots go in `powerbi/` and the README. Because `.pbix` is gitignored by de
 | 7 | Monitoring scope (reports only vs auto-retrain) | Start of Phase 11 |
 | 8 | Move Python/notebooks into Docker or keep local | After Docker is stable (any time) |
 | 9 | Commit the `.pbix` or screenshots only | Phase 12 |
-| 10 | venv vs uv | Phase 0 |
+| 10 | ~~venv vs uv~~ **Decided: uv** | Phase 0 |
 
 ---
 
 ## 14\. Documentation
 
-- **Model cards** (`docs/model_cards/<model>.md`): goal, business question, target, allowed features and banned columns, split dates, metrics vs baseline, chosen threshold and its cost assumptions, SHAP highlights, known limits.  
-- **ADRs** (`docs/adr/NNNN-title.md`): Context → Decision → Alternatives considered → Consequences. One per real decision (stack choices, every item in Section 13).  
-- **Architecture diagram** (`docs/diagrams/`): one clear picture of Section 6 for the README.  
+- **Model cards** (`docs/model_cards/<model>.md`): goal, business question, target, allowed features and banned columns, split dates, metrics vs baseline, chosen threshold and its cost assumptions, SHAP highlights, known limits.
+- **ADRs** (`docs/adr/NNNN-title.md`): Context → Decision → Alternatives considered → Consequences. One per real decision (stack choices, every item in Section 13).
+- **Architecture diagram** (`docs/diagrams/`): one clear picture of Section 6 for the README.
 - **README**: written for a recruiter first, then for a technical reader.
 
 ---
 
 ## 15\. Conventions
 
-- **Python:** type hints, small functions, `ruff` formatting, config from environment variables, `pathlib` for paths, `logging` in `src/`.  
-- **SQL/dbt:** snake\_case; prefixes `stg_`, `int_`, `dim_`, `fct_`, `feat_`; one CTE per logical step; every model has a description and tests in YAML.  
-- **Notebooks:** numbered, a markdown cell explaining the goal at the top and a conclusions cell at the bottom; clear outputs before committing large plots if file size grows.  
+- **Python:** type hints, small functions, `ruff` formatting, config from environment variables, `pathlib` for paths, `logging` in `src/`.
+- **SQL/dbt:** snake\_case; prefixes `stg_`, `int_`, `dim_`, `fct_`, `feat_`; one CTE per logical step; every model has a description and tests in YAML.
+- **Notebooks:** numbered, a markdown cell explaining the goal at the top and a conclusions cell at the bottom; clear outputs before committing large plots if file size grows.
 - **Naming:** clear and boring beats short and clever.
-
-
-# CLAUDE.md
-
-Read `ARCHITECTURE.md` fully before every task. It is the source of truth for this project.
-
-- This is a data science project with supporting engineering. Correctness and clarity beat more features.
-- Follow the teaching protocol (ARCHITECTURE.md Section 2.2): explain, build one step, explain, then stop and wait.
-- Ask before adding tools or making any open decision (Section 13). Never guess.

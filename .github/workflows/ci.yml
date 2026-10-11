@@ -1,1 +1,11 @@
 # ci.yml: GitHub Actions workflow for linting and tests.
+name: CI
+
+on:
+  workflow_dispatch:   # manual trigger only, until real CI is built in Step 8
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CI will be set up in Step 8"
